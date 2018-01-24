@@ -76,13 +76,36 @@ public class TxHandler {
         return true;
     }
 
+    // make sure all claimed outputs are not double spent due to this transaction
+    private boolean isMutuallyValid(Transaction tx, HashMap<UTXO, Boolean> map) {
+        for (int j = 0; j < inputs.size(); j++) {
+            Transaction.Input input = inputs.get(j);
+            UTXO utxo = new UTXO(input.prevTxHash, input.outputIndex);
+
+            if (map.containsKey(utxo)) {
+                return false;
+            }
+            map.put(utxo, true);
+        }
+        return true;
+    }
+
     /**
      * Handles each epoch by receiving an unordered array of proposed transactions, checking each
      * transaction for correctness, returning a mutually valid array of accepted transactions, and
      * updating the current UTXO pool as appropriate.
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
-        // IMPLEMENT THIS
-    }
+        HashMap<UTXO, Boolean> map = new HashMap<UTXO, Boolean>();
+        ArrayList<Transaction> acceptedTransactions = new ArrayList<Transaction>();
+        for (int i = 0; i < possibleTxs.length; i++) {
+            Transaction tx = possibleTxs[i];
+            if (!isValidTx(tx)) continue;
+            if (!isMutuallyValid(tx, map)) continue;
 
+            acceptedTransactions.add(tx);
+        }
+
+        return acceptedTransactions.toArray(new Transaction[acceptedTransactions.size()]);
+    }
 }
